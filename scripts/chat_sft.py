@@ -29,6 +29,7 @@ from tasks.common import TaskMixture
 from tasks.gsm8k import GSM8K
 from tasks.mmlu import MMLU
 from tasks.smoltalk import SmolTalk
+from tasks.local_jsonl import LocalJSONL
 
 # -----------------------------------------------------------------------------
 # CLI arguments
@@ -64,6 +65,8 @@ parser.add_argument("--chatcore-max-sample", type=int, default=24, help="max pro
 # Data mixture
 parser.add_argument("--mmlu-epochs", type=int, default=3, help="number of epochs of MMLU in training mixture (teaches Multiple Choice)")
 parser.add_argument("--gsm8k-epochs", type=int, default=4, help="number of epochs of GSM8K in training mixture (teaches Math and Tool Use)")
+parser.add_argument("--identity-epochs", type=int, default=8, help="oversampling factor for Jarvisn't identity conversations")
+parser.add_argument("--personality-epochs", type=int, default=4, help="oversampling factor for Jarvisn't personality conversations")
 args = parser.parse_args()
 user_config = vars(args).copy()
 # -----------------------------------------------------------------------------
@@ -159,13 +162,26 @@ for group in optimizer.param_groups:
     group["initial_lr"] = group["lr"]
 
 # SFT data mixture and DataLoader
+#
+# General ability comes from SmolTalk + MMLU + GSM8K. Jarvisn't-specific identity
+# and personality data are intentionally small and oversampled so they influence
+# behavior without replacing the broad SFT distribution.
+identity_task = LocalJSONL("sft_dataset/identity.jsonl")
+personality_task = LocalJSONL("sft_dataset/personality.jsonl")
 train_tasks = [
     SmolTalk(split="train"), # 460K rows of general conversations
-    *[MMLU(subset="all", split="auxiliary_train") for _ in range(args.mmlu_epochs)], # 100K rows per epoch
-    *[GSM8K(subset="main", split="train") for _ in range(args.gsm8k_epochs)], # 8K rows per epoch
+    *[MMLU(subset="all", split="auxiliary_train") for _ in range(args.mmlu_epochs)], # ~100K rows per epoch
+    *[GSM8K(subset="main", split="train") for _ in range(args.gsm8k_epochs)], # ~8K rows per epoch
+    *[identity_task for _ in range(args.identity_epochs)],
+    *[personality_task for _ in range(args.personality_epochs)],
 ]
 train_dataset = TaskMixture(train_tasks)
-print0(f"Training mixture: {len(train_dataset):,} rows (MMLU x{args.mmlu_epochs}, GSM8K x{args.gsm8k_epochs})")
+print0(
+    f"Training mixture: {len(train_dataset):,} rows "
+    f"(MMLU x{args.mmlu_epochs}, GSM8K x{args.gsm8k_epochs}, "
+    f"identity {len(identity_task)} x{args.identity_epochs}, "
+    f"personality {len(personality_task)} x{args.personality_epochs})"
+)
 val_dataset = TaskMixture([
     SmolTalk(split="test"), # 24K rows in test set
     MMLU(subset="all", split="test", stop=5200), # 14K rows in test set, use only 5.2K to match the train ratios
