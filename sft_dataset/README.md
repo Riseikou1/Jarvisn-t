@@ -1,63 +1,111 @@
-# Jarvisn't SFT v0.1
+# Jarvisn't SFT data
 
-A bootstrap supervised fine-tuning dataset for an instruction-following assistant.
+This directory contains two different kinds of local data. They are intentionally kept separate because throwing every synthetic example into one training mixture is how a clean experiment becomes soup.
 
-## What this is
+## Default Jarvisn't-specific SFT data
 
-- 1,320 original/synthetic chat examples
-- JSONL, one example per line
-- 90/5/5 train/validation/test split
-- Categories include math, logic, Python, CS, AI/ML, strict formatting, reliability, and safety
-- Each sample includes provenance metadata and a license field
+These files are wired into `scripts/chat_sft.py`:
 
-## What this is NOT
+- `identity.jsonl` — **96 curated conversations** about Jarvisn't's name, creator, provenance, project scope, capabilities, limitations, and relationship to nanochat.
+- `personality.jsonl` — **147 curated conversations** that demonstrate the desired response style: direct, technical, concise, mildly witty, willing to correct the user, and willing to admit uncertainty.
 
-This is **not** a foundation-model pretraining corpus. It is too small for training a GPT-style language model from scratch.
-Use it for:
-- supervised fine-tuning (SFT)
-- pipeline testing
-- tokenizer/data-loader testing
-- early behavior shaping
-- evaluating your training loop
+The default SFT recipe oversamples them using:
+
+```text
+identity:    x8
+personality: x4
+```
+
+The factors are configurable:
+
+```bash
+python -m scripts.chat_sft --identity-epochs 8 --personality-epochs 4
+```
+
+Do not run that command without a compatible pretrained checkpoint. It performs real SFT.
+
+## Bootstrap / experimental corpus
+
+The older files remain available:
+
+- `train.jsonl` — 1,188 examples
+- `valid.jsonl` — 66 examples
+- `test.jsonl` — 66 examples
+
+They contain math, logic, Python, CS, AI/ML, formatting, reliability, and safety examples.
+
+They are **not included in the default Jarvisn't SFT mixture**.
+
+Why? The current training recipe already has large general datasets:
+
+- SmolTalk for conversation
+- MMLU for broad knowledge / multiple choice
+- GSM8K for math and tool-style reasoning
+
+The bootstrap corpus is useful for loader tests, experiments, and targeted ablations, but its heavily templated arithmetic examples do not deserve automatic training weight merely because they exist.
 
 ## Record format
 
+Local records use JSONL, one JSON object per line:
+
 ```json
 {
-  "id": "jv-00001",
+  "id": "jarvisnt-id-001",
   "messages": [
-    {"role": "system", "content": "..."},
-    {"role": "user", "content": "..."},
-    {"role": "assistant", "content": "..."}
+    {"role": "user", "content": "Who are you?"},
+    {"role": "assistant", "content": "I'm Jarvisn't, a small language model project created by Temuujin."}
   ],
-  "category": "coding",
-  "difficulty": "medium",
-  "tags": ["python"],
-  "source": "synthetic_original",
+  "category": "identity",
+  "difficulty": "easy",
+  "tags": ["identity", "name"],
+  "source": "jarvisnt_curated",
   "license": "CC0-1.0"
 }
 ```
 
-## Split sizes
+An optional system message is allowed before the user/assistant turns.
 
-- train: 1,188
-- valid: 66
-- test: 66
+## Validate locally
 
-## Important quality note
+From the repository root:
 
-This dataset is intentionally a **clean bootstrap set**, not a giant synthetic dump.
-For a serious Jarvisn't model, the next useful version should add:
-1. more linguistic diversity,
-2. longer multi-turn conversations,
-3. harder code and reasoning samples,
-4. domain-specific AI/CS data,
-5. verified public-domain / permissively licensed text for continued pretraining,
-6. preference pairs for DPO or another preference-training stage.
+```bash
+python sft_dataset/validate.py \
+  sft_dataset/identity.jsonl \
+  sft_dataset/personality.jsonl
+```
 
-Repeated templates are present on purpose to make the first version deterministic and verifiable.
-Do not confuse example count with model quality. Humanity has already tried that strategy.
+To validate all local files:
+
+```bash
+cd sft_dataset
+python validate.py
+```
+
+## Identity principles
+
+Identity examples teach stable project facts without inventing run-specific metadata:
+
+- name: Jarvisn't
+- creator/maintainer: Temuujin
+- technical foundation: Andrej Karpathy's nanochat
+- project goal: an end-to-end small language-model project rather than a commercial API wrapper
+
+Exact parameter count, GPU hardware, benchmark scores, and checkpoint details are deliberately **not hard-coded**, because those can change between runs.
+
+## Personality principles
+
+Personality is taught through the answers themselves, not through repetitive declarations such as "I am sarcastic."
+
+The intended behavior is:
+
+- technically competent
+- direct and compact by default
+- willing to challenge incorrect assumptions
+- mildly humorous when it does not get in the way
+- explicit about uncertainty
+- never pretending to have executed code or verified facts when it has not
 
 ## License
 
-Dataset content in this package is released as CC0-1.0.
+The original/curated dataset content in this directory is released as CC0-1.0.
