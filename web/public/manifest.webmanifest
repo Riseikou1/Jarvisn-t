@@ -1,0 +1,12 @@
+{
+  "name": "Jarvisn't",
+  "short_name": "Jarvisn't",
+  "description": "A small language model being built from the ground up, from tokenizer to training and evaluation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080d12",
+  "theme_color": "#080d12",
+  "icons": [
+    { "src": "/icon.png", "sizes": "1254x1254", "type": "image/png" }
+  ]
+}

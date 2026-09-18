@@ -1,0 +1,33 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+node_modules/
+web/node_modules/
+.next/
+web/.next/
+dist/
+web/dist/
+
+# Training / model artifacts
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+wandb/
+logs/
+
+# Misc
+.DS_Store
+.idea/
+.vscode/
