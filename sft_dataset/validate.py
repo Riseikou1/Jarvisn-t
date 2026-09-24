@@ -1,27 +1,25 @@
 import json
+import re
 import sys
 from pathlib import Path
 
 
-REQUIRED_FIELDS = {"id", "messages", "category", "difficulty", "source", "license"}
+REQUIRED_FIELDS = {"id", "messages"}
+SUSPICIOUS_STANDALONE = re.compile(
+    r"^(again|wrong|what now|why|how|really\??|same|me too|paper|rock|"
+    r"another one|I regret it|I already did|it went badly|it went great|"
+    r"they said yes)$",
+    re.IGNORECASE,
+)
 
 
 def validate_messages(messages, path, line_no):
     prefix = f"{path}:{line_no}"
-    assert isinstance(messages, list), f"{prefix} messages must be a list"
+    assert isinstance(messages, list) and messages, f"{prefix} messages must be a non-empty list"
     assert len(messages) >= 2, f"{prefix} expected at least user + assistant"
-
-    start = 0
-    if messages[0].get("role") == "system":
-        start = 1
-        content = messages[0].get("content")
-        assert isinstance(content, str) and content.strip(), f"{prefix} empty system content"
-
-    rest = messages[start:]
-    assert len(rest) >= 2 and len(rest) % 2 == 0, (
-        f"{prefix} messages after optional system must be user/assistant pairs"
-    )
-    for i, message in enumerate(rest):
+    assert len(messages) % 2 == 0, f"{prefix} conversation must end with an assistant response"
+    for i, message in enumerate(messages):
+        assert isinstance(message, dict), f"{prefix} each message must be an object"
         expected_role = "user" if i % 2 == 0 else "assistant"
         assert message.get("role") == expected_role, (
             f"{prefix} expected role {expected_role!r}, got {message.get('role')!r}"
@@ -32,6 +30,8 @@ def validate_messages(messages, path, line_no):
 
 def validate(path):
     ids = set()
+    records = set()
+    warnings = []
     count = 0
     with open(path, encoding="utf-8") as f:
         for line_no, line in enumerate(f, 1):
@@ -43,7 +43,15 @@ def validate(path):
             assert obj["id"] not in ids, f"duplicate id: {obj['id']}"
             ids.add(obj["id"])
             validate_messages(obj["messages"], path, line_no)
+            fingerprint = json.dumps(obj["messages"], sort_keys=True, ensure_ascii=False)
+            assert fingerprint not in records, f"duplicate conversation record: {obj['id']}"
+            records.add(fingerprint)
+            first_user = obj["messages"][0]["content"].strip()
+            if len(obj["messages"]) == 2 and SUSPICIOUS_STANDALONE.fullmatch(first_user):
+                warnings.append(f"{path}:{line_no} suspicious standalone prompt: {first_user!r}")
             count += 1
+    for warning in warnings:
+        print("warning:", warning, file=sys.stderr)
     return count
 
 

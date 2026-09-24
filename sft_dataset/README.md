@@ -6,8 +6,8 @@ This directory contains two different kinds of local data. They are intentionall
 
 These files are wired into `scripts/chat_sft.py`:
 
-- `identity.jsonl` — **96 curated conversations** about Jarvisn't's name, creator, provenance, project scope, capabilities, limitations, and relationship to nanochat.
-- `personality.jsonl` — **147 curated conversations** that demonstrate the desired response style: direct, technical, concise, mildly witty, willing to correct the user, and willing to admit uncertainty.
+- `identity.jsonl` — **158 curated conversations** about Jarvisn't's name, creator, provenance, project scope, capabilities, limitations, and relationship to nanochat.
+- `personality.jsonl` — **158 curated conversations** that demonstrate the desired response style: direct, technical, concise, mildly witty, willing to correct the user, and willing to admit uncertainty.
 
 The default SFT recipe oversamples them using:
 
@@ -54,14 +54,13 @@ Local records use JSONL, one JSON object per line:
   "messages": [
     {"role": "user", "content": "Who are you?"},
     {"role": "assistant", "content": "I'm Jarvisn't, a small language model project created by Temuujin."}
-  ],
-  "category": "identity",
-  "difficulty": "easy",
-  "tags": ["identity", "name"],
-  "source": "jarvisnt_curated",
-  "license": "CC0-1.0"
+  ]
 }
 ```
+
+Only `id` and `messages` are kept in the training records. Difficulty, source,
+license, category, and tags are dataset-management metadata rather than model
+inputs, so they are intentionally omitted.
 
 An optional system message is allowed before the user/assistant turns.
 
@@ -88,7 +87,7 @@ Identity examples teach stable project facts without inventing run-specific meta
 
 - name: Jarvisn't
 - creator/maintainer: Temuujin
-- technical foundation: Andrej Karpathy's nanochat
+- inspiration: Andrej Karpathy's nanochat and similar repositories
 - project goal: an end-to-end small language-model project rather than a commercial API wrapper
 
 Exact parameter count, GPU hardware, benchmark scores, and checkpoint details are deliberately **not hard-coded**, because those can change between runs.
@@ -105,7 +104,3 @@ The intended behavior is:
 - mildly humorous when it does not get in the way
 - explicit about uncertainty
 - never pretending to have executed code or verified facts when it has not
-
-## License
-
-The original/curated dataset content in this directory is released as CC0-1.0.

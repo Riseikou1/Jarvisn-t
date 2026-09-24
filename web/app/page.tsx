@@ -10,6 +10,7 @@ export default function Home() {
           <h1><em>{siteConfig.name}</em> is a small language model being built all the way down.</h1>
           <p className="lede">No API wrapper. No mystery benchmark. Just the work of learning how tokenization, pretraining, fine-tuning, evaluation, and inference fit together.</p>
           <div className="actions">
+            <Link className="button primary" href="/chat">Try the chat <span>↗</span></Link>
             <Link className="button primary" href="/model">Explore the model <span>↗</span></Link>
             <Link className="button secondary" href="/training">See the training plan</Link>
           </div>

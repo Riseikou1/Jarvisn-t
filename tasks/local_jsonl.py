@@ -1,9 +1,9 @@
 """
 Local JSONL conversation datasets for Jarvisn't-specific SFT data.
 
-Each non-empty line is a JSON object with a `messages` field. Metadata fields
-such as `id`, `category`, `tags`, and `license` are preserved in the file
-but are not required by the training loader.
+Each non-empty line is a JSON object with `id` and `messages` fields. The
+loader uses only the conversation messages for training; the id is used for
+duplicate detection and diagnostics.
 """
 
 import json

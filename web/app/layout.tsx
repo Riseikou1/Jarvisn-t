@@ -19,7 +19,13 @@ export async function generateMetadata(): Promise<Metadata> {
     authors: [{ name: siteConfig.creator }],
     keywords: ["Jarvisn't", "small language model", "LLM training", "PyTorch", "nanochat"],
     manifest: "/manifest.webmanifest",
-    icons: { icon: "/icon.png", apple: "/icon.png" },
+    icons: {
+      icon: [
+        { url: "/favicon.ico" },
+        { url: "/icon.png", type: "image/png" },
+      ],
+      apple: "/apple-icon.png",
+    },
     openGraph: {
       type: "website",
       siteName: siteConfig.name,

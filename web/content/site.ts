@@ -79,6 +79,7 @@ export function createPageMetadata(meta: (typeof pageMeta)[keyof typeof pageMeta
 }
 
 export const primaryNav = [
+  { href: "/chat", label: "Chat" },
   { href: "/about", label: "About" },
   { href: "/model", label: "Model" },
   { href: "/training", label: "Training" },
