@@ -43,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RootLayout({children}:{children:React.ReactNode}) {
-  return <html lang="en"><body>
+  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html: `try { const t = localStorage.getItem('jarvisnt-theme') || 'dark'; document.documentElement.dataset.theme = t === 'light' ? 'light' : 'dark'; document.documentElement.style.colorScheme = document.documentElement.dataset.theme; } catch { document.documentElement.dataset.theme = 'dark'; }`}} /></head><body>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <div className="page-grid" aria-hidden="true"/>
     <Nav/>
