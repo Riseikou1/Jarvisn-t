@@ -158,8 +158,10 @@ class RustBPETokenizer:
             # some conversation surgery is necessary here for now...
             conversation = copy.deepcopy(conversation) # avoid mutating the original
             messages = conversation["messages"]
-            assert messages[1]["role"] == "user", "System message must be followed by a user message"
-            messages[1]["content"] = messages[0]["content"] + "\n\n" + messages[1]["content"]
+            first_user = next((i for i, message in enumerate(messages[1:], start=1)
+                               if message["role"] == "user"), None)
+            assert first_user is not None, "System message must be followed by a user message"
+            messages[first_user]["content"] = messages[0]["content"] + "\n\n" + messages[first_user]["content"]
             messages = messages[1:]
         else:
             messages = conversation["messages"]
@@ -174,10 +176,12 @@ class RustBPETokenizer:
 
         # now we can tokenize the conversation
         add_tokens(bos, 0)
+        first_role = messages[0]["role"]
+        assert first_role in {"user", "assistant"}, f"Invalid first chat role: {first_role}"
         for i, message in enumerate(messages):
 
             # some sanity checking here around assumptions, to prevent footguns
-            must_be_from = "user" if i % 2 == 0 else "assistant"
+            must_be_from = first_role if i % 2 == 0 else ("assistant" if first_role == "user" else "user")
             assert message["role"] == must_be_from, f"Message {i} is from {message['role']} but should be from {must_be_from}"
 
             # content can be either a simple string or a list of parts (e.g. containing tool calls)

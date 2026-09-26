@@ -110,6 +110,33 @@ python -m scripts.chat_eval --help
 
 The repository includes bits-per-byte evaluation, CORE tasks, chat evaluation, and inference benchmarking. No Jarvisn't scores are published yet.
 
+## Local inference API
+
+The local HTTP API uses the same `load_model(..., phase="eval")` checkpoint
+loader and `Engine` generation path as `scripts.chat_cli`. Start it from the
+repository root with a local checkpoint and tokenizer installed under
+`$JARVISNT_BASE_DIR`:
+
+```bash
+uv run --extra cpu python -m scripts.serve_chat \
+  --source custom --model-tag d24 --step 100 --device-type cpu
+```
+
+It listens on `http://127.0.0.1:8000`. Send a new message with optional
+completed conversation history:
+
+```bash
+curl http://127.0.0.1:8000/v1/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"What did I ask before?","history":[{"role":"user","content":"Remember this: the answer is 42."},{"role":"assistant","content":"Got it. I will remember that the answer is 42."}]}'
+```
+
+The response is JSON in the form `{"response":"..."}`. History must contain
+alternating user and assistant messages, beginning with a user message. Set
+`JARVISNT_INFERENCE_API_KEY` in the server environment to require
+`Authorization: Bearer <key>`; do not put the key in a client-side app or source
+file. The API is bound to localhost by default and is intended for local use.
+
 ## Web interface
 
 The site in `web/` documents the project and its current status. It deliberately does not expose a chat button while no trained model endpoint exists.

@@ -9,6 +9,7 @@ import torch
 from jarvisnt.common import compute_init, autodetect_device_type
 from jarvisnt.engine import Engine
 from jarvisnt.checkpoint_manager import load_model
+from jarvisnt.chat_context import trim_tokenized_chat_history
 
 parser = argparse.ArgumentParser(description="Chat with a Jarvisn't checkpoint")
 parser.add_argument('-i', '--source', type=str, default="sft", help="Source of the model: sft|rl")
@@ -68,6 +69,17 @@ while True:
     if not user_input:
         continue
 
+    # Keep only the latest three prior chat messages before adding this user
+    # turn. The BOS/system prefix stays intact.
+    conversation_tokens = trim_tokenized_chat_history(
+        conversation_tokens,
+        user_start,
+        user_end,
+        assistant_start,
+        assistant_end,
+        keep_messages=3,
+    )
+
     # Add User message to the conversation
     conversation_tokens.append(user_start)
     conversation_tokens.extend(tokenizer.encode(user_input))
@@ -85,13 +97,17 @@ while True:
     print("\nAssistant: ", end="", flush=True)
     for token_column, token_masks in engine.generate(conversation_tokens, **generate_kwargs):
         token = token_column[0] # pop the batch dimension (num_samples=1)
+        # Engine.generate yields the terminal token so callers can observe completion.
+        # Keep it in conversation state, but never render it as assistant text.
         response_tokens.append(token)
+        if token == assistant_end:
+            break
         token_text = tokenizer.decode([token])
         print(token_text, end="", flush=True)
     print()
     # we have to ensure that the assistant end token is the last token
     # so even if generation ends due to max tokens, we have to append it to the end
-    if response_tokens[-1] != assistant_end:
+    if not response_tokens or response_tokens[-1] != assistant_end:
         response_tokens.append(assistant_end)
     conversation_tokens.extend(response_tokens)
 

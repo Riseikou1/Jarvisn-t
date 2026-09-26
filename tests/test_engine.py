@@ -47,6 +47,17 @@ class MockModel:
         return logits
 
 
+class AssistantEndModel(MockModel):
+    """Mock model that always emits assistant_end as its next token."""
+    def forward(self, ids, kv_cache=None):
+        B, T = ids.shape
+        if kv_cache is not None:
+            kv_cache.advance(T)
+        logits = torch.full((B, T, self.vocab_size), -100.0)
+        logits[:, :, 260] = 100.0
+        return logits
+
+
 class ByteTokenizer:
     """
     Simple byte-level tokenizer for testing.
@@ -196,6 +207,19 @@ def test_multi_sample_first_token_diversity():
         f"With uniform logits, this is statistically impossible (~10^-36 probability) "
         f"unless tokens are being broadcast instead of independently sampled."
     )
+
+
+def test_assistant_end_stops_generation_and_is_not_in_response():
+    """Assistant end completes the stream and is omitted from response content."""
+    engine = Engine(AssistantEndModel(), ByteTokenizer())
+    prompt = [261, 72]
+
+    streamed = list(engine.generate(prompt, max_tokens=8, temperature=0.0))
+    results, _ = engine.generate_batch(prompt, max_tokens=8, temperature=0.0)
+
+    assert len(streamed) == 1
+    assert streamed[0][0] == [260]  # completion marker is detectable by the caller
+    assert results == [prompt]  # generate_batch excludes the marker from text tokens
 
 
 def test_seed_reproducibility():
