@@ -139,16 +139,20 @@ button, input, textarea { font: inherit; }
 .brand { display: inline-flex; align-items: center; gap: 12px; width: max-content; font-weight: 720; letter-spacing: -.02em; }
 .brand-logo { width: 32px; height: 32px; display: block; object-fit: contain; }
 .desktop-nav { display: flex; align-items: center; gap: 30px; }
-.desktop-nav a { color: var(--muted); font: 500 12px var(--mono); transition: color .18s ease; }
-.desktop-nav a:hover, .desktop-nav a:focus-visible, .desktop-nav a.active { color: var(--ink); }
+.desktop-nav a { position: relative; padding: 9px 2px; color: var(--muted); font: 500 12px var(--mono); transition: color .18s ease, transform .18s ease; }
+.desktop-nav a::after { content: ""; position: absolute; right: 0; bottom: 2px; left: 0; height: 2px; border-radius: 2px; background: var(--cyan); transform: scaleX(0); transform-origin: center; transition: transform .2s ease; }
+.desktop-nav a:hover, .desktop-nav a:focus-visible { color: var(--ink); transform: translateY(-1px); }
+.desktop-nav a:hover::after, .desktop-nav a:focus-visible::after, .desktop-nav a.active::after { transform: scaleX(1); }
+.desktop-nav a.active { color: var(--cyan-soft); font-weight: 700; }
 .status-link { justify-self: end; display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font: 500 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
 .status-link span { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 14px rgba(207, 175, 110, .55); }
 .mobile-menu { display: none; position: relative; justify-self: end; }
 .mobile-menu summary { list-style: none; cursor: pointer; font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .1em; }
 .mobile-menu summary::-webkit-details-marker { display: none; }
 .mobile-menu nav { position: absolute; right: 0; top: 34px; min-width: 210px; display: grid; padding: 12px; border: 1px solid var(--line-strong); background: var(--bg-deep); box-shadow: 0 18px 45px rgba(0, 0, 0, .4); }
-.mobile-menu nav a { padding: 12px; color: var(--muted); font: 500 12px var(--mono); }
-.mobile-menu nav a.active { color: var(--cyan); }
+.mobile-menu nav a { padding: 12px; border-radius: 8px; color: var(--muted); font: 500 12px var(--mono); transition: color .18s ease, background .18s ease, transform .18s ease; }
+.mobile-menu nav a:hover, .mobile-menu nav a:focus-visible { color: var(--ink); background: var(--panel-strong); transform: translateX(2px); }
+.mobile-menu nav a.active { color: var(--cyan-soft); background: var(--panel); font-weight: 700; box-shadow: inset 2px 0 var(--cyan); }
 
 .kicker { margin: 0 0 18px; color: var(--cyan-soft); font: 500 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
 .kicker > span { display: inline-block; width: 6px; height: 6px; margin-right: 10px; border-radius: 50%; background: var(--cyan); }

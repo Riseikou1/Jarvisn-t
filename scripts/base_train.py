@@ -97,7 +97,7 @@ print0(f"COMPUTE_DTYPE: {COMPUTE_DTYPE} ({COMPUTE_DTYPE_REASON})")
 
 # wandb logging init
 use_dummy_wandb = args.run == "dummy" or not master_process
-wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="jarvisnt", name=args.run, config=user_config)
+wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="Jarvisnt", name=args.run, config=user_config)
 
 # Flash Attention status
 from jarvisnt.flash_attention import USE_FA3

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script is configured to train your own GPT-2 grade LLM (pretraining + finetuning)
-# It is designed to run on a blank 8XH100 GPU node and takes approximately 1.5 hours to complete.
+# Default launch settings target a 4x H100 SXM node. Runtime depends on the host.
 
 # 1) Example launch (simplest):
 # bash runs/speedrun.sh
@@ -15,13 +15,17 @@ export OMP_NUM_THREADS=1
 export JARVISNT_BASE_DIR="$HOME/.cache/jarvisnt"
 mkdir -p $JARVISNT_BASE_DIR
 
+# Override these when the rented node has a different GPU count or memory limit.
+NPROC_PER_NODE="${NPROC_PER_NODE:-4}"
+DEVICE_BATCH_SIZE="${DEVICE_BATCH_SIZE:-16}"
+
 # -----------------------------------------------------------------------------
 # Python venv setup with uv
 
 # install uv (if not already installed)
 command -v uv &> /dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 # create a .venv local virtual environment (if it doesn't exist)
-[ -d ".venv" ] || uv .venv
+[ -d ".venv" ] || uv venv
 # install the repo dependencies
 uv sync --extra gpu
 # activate venv so that `python` uses the project's venv instead of system python
@@ -64,16 +68,16 @@ echo "Waiting for dataset download to complete..."
 wait $DATASET_DOWNLOAD_PID
 
 # d24 model (slightly undertrained to beat GPT-2 => decrease data:params ratio from compute optimal 10.5 (default) to 8)
-torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- --depth=24 --target-param-data-ratio=8 --device-batch-size=16 --fp8 --run=$WANDB_RUN
+torchrun --standalone --nproc_per_node="$NPROC_PER_NODE" -m scripts.base_train -- --depth=24 --target-param-data-ratio=8 --device-batch-size="$DEVICE_BATCH_SIZE" --fp8 --run=$WANDB_RUN
 # evaluate the model: CORE metric, BPB on train/val, and draw samples
-torchrun --standalone --nproc_per_node=8 -m scripts.base_eval -- --device-batch-size=16
+torchrun --standalone --nproc_per_node="$NPROC_PER_NODE" -m scripts.base_eval -- --device-batch-size="$DEVICE_BATCH_SIZE"
 
 # -----------------------------------------------------------------------------
 # SFT (teach the model conversation special tokens, tool use, multiple choice)
 
 # run SFT and eval the model
-torchrun --standalone --nproc_per_node=8 -m scripts.chat_sft -- --run=$WANDB_RUN
-torchrun --standalone --nproc_per_node=8 -m scripts.chat_eval -- -i sft
+torchrun --standalone --nproc_per_node="$NPROC_PER_NODE" -m scripts.chat_sft -- --run=$WANDB_RUN
+torchrun --standalone --nproc_per_node="$NPROC_PER_NODE" -m scripts.chat_eval -- -i sft
 
 # chat with the model over CLI! Leave out the -p to chat interactively
 # python -m scripts.chat_cli -p "Why is the sky blue?"

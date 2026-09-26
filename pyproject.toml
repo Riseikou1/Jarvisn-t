@@ -15,6 +15,7 @@ dependencies = [
     "tiktoken>=0.11.0",
     "torch==2.9.1",
     "wandb>=0.21.3",
+    "weave>=0.52.25",
 ]
 
 [dependency-groups]

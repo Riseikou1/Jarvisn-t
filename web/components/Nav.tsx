@@ -20,9 +20,10 @@ export function Nav(){
     window.localStorage.setItem("jarvisnt-theme", nextTheme);
     setTheme(nextTheme);
   }
+  const isActive = (href: string) => path === href || (href === "/chat" && path === "/");
   const navLinks = <>
       {primaryNav.map(({href,label}) =>
-        <Link className={path===href?"active":""} aria-current={path===href?"page":undefined} href={href} key={href}>{label}</Link>
+        <Link className={isActive(href) ? "active" : ""} aria-current={isActive(href) ? "page" : undefined} href={href} key={href}>{label}</Link>
       )}
   </>;
   return <header className="site-header">
