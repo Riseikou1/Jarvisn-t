@@ -77,7 +77,7 @@ while True:
         user_end,
         assistant_start,
         assistant_end,
-        keep_messages=3,
+        keep_exchanges=3,
     )
 
     # Add User message to the conversation

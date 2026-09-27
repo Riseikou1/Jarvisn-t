@@ -16,3 +16,12 @@ eval_bundle/
 # Local setup
 CLAUDE.md
 wandb/
+
+# Local model artifacts (store outside the repository)
+/*_checkpoints/
+**/*_checkpoints/
+/tokenizer/
+*.pt
+*.pth
+*.safetensors
+*.bin

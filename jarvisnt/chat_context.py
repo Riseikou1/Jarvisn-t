@@ -1,22 +1,22 @@
 """Small helpers for keeping inference context bounded by chat messages."""
 
 
-MAX_HISTORY_MESSAGES = 3
+MAX_HISTORY_EXCHANGES = 3
 
 
 def assemble_chat_messages(history, current_user_message, system_prompt=None):
-    """Keep the newest chat history messages and append the current user turn."""
+    """Keep the newest complete user/assistant exchanges and current user turn."""
     messages = []
     if system_prompt is not None:
         messages.append({"role": "system", "content": system_prompt})
-    messages.extend(history[-MAX_HISTORY_MESSAGES:])
+    messages.extend(history[-2 * MAX_HISTORY_EXCHANGES:])
     messages.append({"role": "user", "content": current_user_message})
     return messages
 
 
 def trim_tokenized_chat_history(tokens, user_start, user_end, assistant_start,
-                                assistant_end, keep_messages=MAX_HISTORY_MESSAGES):
-    """Keep a token prompt's prefix and newest complete chat messages.
+                                assistant_end, keep_exchanges=MAX_HISTORY_EXCHANGES):
+    """Keep a token prompt's prefix and newest complete user/assistant pairs.
 
     The CLI calls this before adding the current user message. The prefix (BOS
     and any future system prompt tokens) is intact.
@@ -43,4 +43,10 @@ def trim_tokenized_chat_history(tokens, user_start, user_end, assistant_start,
             break
         messages.append(tokens[i:end_index + 1])
         i = end_index + 1
-    return prefix + [token for message in messages[-keep_messages:] for token in message]
+    complete_pairs = []
+    for index in range(0, len(messages) - 1, 2):
+        if (messages[index][0] == user_start
+                and messages[index + 1][0] == assistant_start):
+            complete_pairs.append(messages[index:index + 2])
+    kept = complete_pairs[-keep_exchanges:]
+    return prefix + [token for pair in kept for message in pair for token in message]

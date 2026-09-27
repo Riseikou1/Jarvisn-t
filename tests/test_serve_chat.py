@@ -44,16 +44,19 @@ def test_reply_uses_history_and_strips_terminal_token():
     ]
 
 
-def test_reply_keeps_only_latest_three_history_messages_and_current_message():
+def test_reply_keeps_exactly_newest_three_complete_exchanges_and_system():
     tokenizer = FakeTokenizer()
     service = InferenceService(FakeEngine(), tokenizer, max_new_tokens=64)
     history = [
-        {"role": "user", "content": "old question"},
-        {"role": "assistant", "content": "old answer"},
-        {"role": "user", "content": "recent question 1"},
-        {"role": "assistant", "content": "recent answer 1"},
-        {"role": "user", "content": "recent question 2"},
-        {"role": "assistant", "content": "recent answer 2"},
+        {"role": "system", "content": "System rules."},
+        {"role": "user", "content": "exchange 1 question"},
+        {"role": "assistant", "content": "exchange 1 answer"},
+        {"role": "user", "content": "exchange 2 question"},
+        {"role": "assistant", "content": "exchange 2 answer"},
+        {"role": "user", "content": "exchange 3 question"},
+        {"role": "assistant", "content": "exchange 3 answer"},
+        {"role": "user", "content": "exchange 4 question"},
+        {"role": "assistant", "content": "exchange 4 answer"},
     ]
     service.reply(
         "current question", history=history, max_tokens=16
@@ -61,9 +64,13 @@ def test_reply_keeps_only_latest_three_history_messages_and_current_message():
 
     messages = tokenizer.last_conversation["messages"]
     assert messages == [
-        {"role": "assistant", "content": "recent answer 1"},
-        {"role": "user", "content": "recent question 2"},
-        {"role": "assistant", "content": "recent answer 2"},
+        {"role": "system", "content": "System rules."},
+        {"role": "user", "content": "exchange 2 question"},
+        {"role": "assistant", "content": "exchange 2 answer"},
+        {"role": "user", "content": "exchange 3 question"},
+        {"role": "assistant", "content": "exchange 3 answer"},
+        {"role": "user", "content": "exchange 4 question"},
+        {"role": "assistant", "content": "exchange 4 answer"},
         {"role": "user", "content": "current question"},
         {"role": "assistant", "content": ""},
     ]
