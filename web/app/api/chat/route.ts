@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-// Leave a small margin below the platform function limit so the route can
-// return a useful JSON response instead of being terminated abruptly.
 export const maxDuration = 60;
 
 const DEFAULT_TIMEOUT_MS = 55_000;
@@ -10,6 +8,8 @@ const DEFAULT_RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_MESSAGES = 32;
+const MAX_MESSAGE_CHARS = 16_000;
+const MAX_CONTEXT_TURNS = 3;
 
 type RateEntry = { count: number; windowStartedAt: number };
 const rateEntries = new Map<string, RateEntry>();
@@ -31,7 +31,6 @@ function rateLimit(request: NextRequest) {
   const existing = rateEntries.get(key);
   const limit = numberEnv("JARVISNT_RATE_LIMIT", DEFAULT_RATE_LIMIT);
 
-  // Keep this best-effort in-memory table bounded on warm instances.
   if (rateEntries.size > 10_000) {
     for (const [entryKey, entry] of rateEntries) {
       if (now - entry.windowStartedAt >= RATE_WINDOW_MS) rateEntries.delete(entryKey);
@@ -55,64 +54,123 @@ function rateLimit(request: NextRequest) {
   return null;
 }
 
+function validateAndLimitMessages(value: unknown) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_MESSAGES) {
+    throw new Error("messages must contain between 1 and " + MAX_MESSAGES + " items.");
+  }
+
+  const messages: { role: "system" | "user" | "assistant"; content: string }[] = [];
+  for (const [index, item] of value.entries()) {
+    if (!item || typeof item !== "object") throw new Error("messages[" + index + "] must be an object.");
+    const message = item as { role?: unknown; content?: unknown };
+    if (message.role !== "system" && message.role !== "user" && message.role !== "assistant") {
+      throw new Error("messages[" + index + "].role is invalid.");
+    }
+    if (typeof message.content !== "string" || !message.content.trim()) {
+      throw new Error("messages[" + index + "].content must be a non-empty string.");
+    }
+    if (message.content.length > MAX_MESSAGE_CHARS) {
+      throw new Error("messages[" + index + "].content is too long.");
+    }
+    if (message.role === "system" && index !== 0) {
+      throw new Error("A system message is allowed only at the start.");
+    }
+    messages.push({ role: message.role, content: message.content });
+  }
+
+  const system = messages[0]?.role === "system" ? [messages[0]] : [];
+  const chat = messages.slice(system.length);
+  if (!chat.length || chat[chat.length - 1].role !== "user") {
+    throw new Error("messages must end with the current user message.");
+  }
+  if (chat.some((message, index) => message.role !== (index % 2 === 0 ? "user" : "assistant"))) {
+    throw new Error("Chat messages must alternate user and assistant, starting with user.");
+  }
+
+  // Keep the system prompt, the previous three user/assistant pairs, and the
+  // current user message. The UI can still display the complete local chat.
+  const contextMessages = chat.slice(-(MAX_CONTEXT_TURNS * 2 + 1));
+  return [...system, ...contextMessages];
+}
+
 export async function POST(request: NextRequest) {
   const limited = rateLimit(request);
   if (limited) return limited;
 
   const inferenceUrl = process.env.JARVISNT_INFERENCE_URL;
-  if (!inferenceUrl) {
+  const apiKey = process.env.JARVISNT_INFERENCE_API_KEY;
+  if (!inferenceUrl || !apiKey) {
     return NextResponse.json(
-      { error: "Chat inference is not configured. Set JARVISNT_INFERENCE_URL." },
+      { error: "RunPod chat is not configured. Set the server-side inference URL and API key." },
       { status: 503 },
     );
   }
 
+  let messages: ReturnType<typeof validateAndLimitMessages>;
+  let body: Record<string, unknown>;
   try {
     const rawBody = await request.text();
     if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
       return NextResponse.json({ error: "The request is too large." }, { status: 413 });
     }
-
-    let body: { messages?: unknown[]; [key: string]: unknown };
-    try {
-      body = JSON.parse(rawBody) as { messages?: unknown[]; [key: string]: unknown };
-    } catch {
-      return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-    }
-
-    if (!Array.isArray(body?.messages) || body.messages.length === 0 || body.messages.length > MAX_MESSAGES) {
-      return NextResponse.json(
-        { error: `messages must contain between 1 and ${MAX_MESSAGES} items.` },
-        { status: 400 },
-      );
-    }
-
-    const headers: HeadersInit = { "Content-Type": "application/json" };
-    const apiKey = process.env.JARVISNT_INFERENCE_API_KEY;
-    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-
-    const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      numberEnv("JARVISNT_INFERENCE_TIMEOUT_MS", DEFAULT_TIMEOUT_MS),
+    body = JSON.parse(rawBody) as Record<string, unknown>;
+    messages = validateAndLimitMessages(body?.messages);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Invalid request." },
+      { status: 400 },
     );
-    try {
-      const upstream = await fetch(`${inferenceUrl.replace(/\/$/, "")}/v1/chat`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: controller.signal,
-        cache: "no-store",
-      });
-      const payload = await upstream.json().catch(() => ({ error: "Invalid inference response." }));
-      return NextResponse.json(payload, { status: upstream.status });
-    } finally {
-      clearTimeout(timeout);
+  }
+
+  const temperature = typeof body.temperature === "number" ? body.temperature : 0.6;
+  const top_k = Number.isInteger(body.top_k) ? body.top_k as number : 50;
+  const max_tokens = Number.isInteger(body.max_tokens) ? body.max_tokens as number : 256;
+  if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2
+      || top_k < 1 || top_k > 256 || max_tokens < 1 || max_tokens > 512) {
+    return NextResponse.json({ error: "Generation settings are outside the allowed range." }, { status: 400 });
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    numberEnv("JARVISNT_INFERENCE_TIMEOUT_MS", DEFAULT_TIMEOUT_MS),
+  );
+
+  try {
+    const upstream = await fetch(inferenceUrl, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: { messages, temperature, top_k, max_tokens },
+      }),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+
+    const result = await upstream.json().catch(() => null) as {
+      status?: unknown;
+      output?: { response?: unknown; error?: { message?: unknown } };
+    } | null;
+
+    if (!upstream.ok) {
+      return NextResponse.json({ error: "RunPod could not process this message." }, { status: 502 });
     }
+    if (result?.status !== "COMPLETED" || typeof result.output?.response !== "string") {
+      return NextResponse.json({ error: "The model did not return a completed response." }, { status: 502 });
+    }
+
+    return NextResponse.json({
+      message: { role: "assistant", content: result.output.response },
+    });
   } catch (error) {
     const message = error instanceof Error && error.name === "AbortError"
       ? "The model took too long to respond."
-      : "The inference service could not be reached.";
+      : "The RunPod inference service could not be reached.";
     return NextResponse.json({ error: message }, { status: 502 });
+  } finally {
+    clearTimeout(timeout);
   }
 }
