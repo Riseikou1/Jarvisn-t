@@ -59,13 +59,13 @@ html[data-theme="light"] .mobile-menu nav a.active { color: var(--cyan); }
 .inference-message.assistant p { margin: 2px 0 0; color: var(--ink); line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
 .assistant-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--panel-strong); color: var(--cyan); font: 600 13px var(--sans); }
 .inference-composer-wrap { width: 100%; }
-.inference-disclosure { position: relative; margin: 0 0 12px; color: var(--muted); font-size: 12px; }
-.inference-disclosure summary { width: max-content; display: flex; align-items: center; gap: 7px; margin: 0 auto; padding: 5px 10px; border: 1px solid transparent; border-radius: 999px; color: var(--muted); cursor: pointer; list-style: none; transition: color .18s ease, border-color .18s ease, background .18s ease; }
+.inference-disclosure { position: relative; margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.inference-disclosure summary { width: max-content; display: flex; align-items: center; gap: 8px; margin: 0 auto; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); background: var(--panel); font-weight: 600; cursor: pointer; list-style: none; box-shadow: 0 2px 8px rgba(0,0,0,.14); transition: color .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
 .inference-disclosure summary::-webkit-details-marker { display: none; }
-.inference-disclosure summary:hover, .inference-disclosure summary:focus-visible, .inference-disclosure[open] summary { color: var(--cyan-soft); border-color: var(--line-strong); background: var(--panel); outline: none; }
-.inference-disclosure summary span { color: var(--cyan); font-size: 14px; }
-.inference-disclosure-content { max-width: 620px; margin: 10px auto 0; padding: 14px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: 0 12px 32px rgba(0,0,0,.16); }
-.inference-disclosure-content p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.inference-disclosure summary:hover, .inference-disclosure summary:focus-visible, .inference-disclosure[open] summary { color: var(--cyan-soft); border-color: var(--cyan); background: var(--panel); outline: none; box-shadow: 0 3px 12px rgba(57,215,229,.12); }
+.inference-disclosure summary span { color: var(--cyan); font-size: 16px; }
+.inference-disclosure-content { max-width: 760px; margin: 10px auto 0; padding: 18px 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: 0 12px 32px rgba(0,0,0,.16); }
+.inference-disclosure-content p { margin: 0; color: var(--ink); font-size: 15px; line-height: 1.75; }
 .inference-disclosure-content p + p { margin-top: 8px; }
 .inference-composer { min-height: 64px; display: flex; align-items: end; gap: 12px; padding: 12px 14px 12px 20px; border: 1px solid var(--line-strong); border-radius: 28px; background: var(--panel); box-shadow: 0 2px 8px rgba(0,0,0,.14); transition: box-shadow .15s ease, border-color .15s ease; }
 .inference-composer:focus-within { border-color: var(--quiet); box-shadow: 0 3px 12px rgba(0,0,0,.2); }
