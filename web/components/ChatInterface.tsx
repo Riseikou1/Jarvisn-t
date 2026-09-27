@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -11,6 +11,11 @@ export function ChatInterface() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, busy]);
 
   async function send(event: FormEvent) {
     event.preventDefault();
@@ -57,9 +62,17 @@ export function ChatInterface() {
             </article>
           ))}
           {busy && <article className="inference-message assistant"><div><span className="assistant-mark">J</span><p className="typing">Thinking…</p></div></article>}
+          <div ref={messagesEndRef} aria-hidden="true" />
         </div>
       )}
       <div className="inference-composer-wrap">
+        <details className="inference-disclosure">
+          <summary><span aria-hidden="true">ⓘ</span> About this chat</summary>
+          <div className="inference-disclosure-content">
+            <p>This project is designed to run on a tight budget. It uses a CPU rather than an always-on GPU cluster, so the service may take a while to start when it has been idle. If many people are chatting at once, you may also have to wait in a queue.</p>
+            <p>The model is an experimental, small model built to beat GPT-2. It can make things up confidently, so please check important information. Thanks for your patience while this project grows.</p>
+          </div>
+        </details>
         {error && <p className="inference-error" role="alert">{error}</p>}
         <form className="inference-composer" onSubmit={send}>
           <textarea
@@ -73,7 +86,7 @@ export function ChatInterface() {
           />
           <button type="submit" disabled={busy || !input.trim()} aria-label="Send message">↑</button>
         </form>
-        <p className="inference-note">Jarvis&apos;nt is still in development. Responses may be unreliable.</p>
+        <p className="inference-note">Experimental small model · Responses may be unreliable</p>
       </div>
     </section>
   );

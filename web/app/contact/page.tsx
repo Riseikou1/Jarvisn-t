@@ -10,7 +10,7 @@ export default function Contact() {
         <div className="contact-links">
           <a className="contact-item" href={`mailto:${siteConfig.email}`}><div className="contact-item-top"><span className="contact-label">Email</span><span className="contact-arrow">↗</span></div><strong>{siteConfig.email}</strong></a>
           <a className="contact-item" href={`tel:${siteConfig.phone}`}><div className="contact-item-top"><span className="contact-label">Phone</span><span className="contact-arrow">↗</span></div><strong>+82 10-8089-3208</strong></a>
-          <a className="contact-item" href={siteConfig.portfolio} target="_blank" rel="noopener noreferrer"><div className="contact-item-top"><span className="contact-label">Portfolio</span><span className="contact-arrow">↗</span></div><strong>Selected work</strong></a>
+          <a className="contact-item" href={siteConfig.portfolio} target="_blank" rel="noopener noreferrer"><div className="contact-item-top"><span className="contact-label">Portfolio</span><span className="contact-arrow">↗</span></div><strong>Temuujin&apos;s Portfolio</strong></a>
           <a className="contact-item" href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer"><div className="contact-item-top"><span className="contact-label">LinkedIn</span><span className="contact-arrow">↗</span></div><strong>Temuujin Gerelt-Och</strong></a>
           <a className="contact-item" href={siteConfig.github} target="_blank" rel="noopener noreferrer"><div className="contact-item-top"><span className="contact-label">GitHub</span><span className="contact-arrow">↗</span></div><strong>Riseikou1</strong></a>
         </div>

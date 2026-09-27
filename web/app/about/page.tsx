@@ -1,17 +1,18 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createPageMetadata, pageMeta, siteConfig } from "../../content/site";
 
 export const metadata = createPageMetadata(pageMeta.about);
 
 export default function About() {
   return <main id="main-content" className="shell page">
-    <header className="page-hero"><p className="kicker">01 / About</p><h1>Learning the whole system, not just the last API call.</h1><p>Jarvisn't is an independent small language-model project in development by {siteConfig.creator}.</p></header>
+    <header className="page-hero"><p className="kicker">01 / About</p><h1>Learning the whole system, not just the last API call.</h1><p>Jarvisn't is an independent language-model project built and trained by {siteConfig.creator}.</p></header>
     <section className="editorial-split section-rule">
       <div><p className="kicker">The project</p><h2>A practical route through modern language modeling.</h2></div>
-      <div className="rich-copy"><p>The project began with a simple question: what changes when you stop treating language models as black boxes and build the pipeline yourself?</p><p>Jarvisn't follows that question from raw text and tokenization through model architecture, pretraining, supervised fine-tuning, evaluation, and eventual inference. The goal is technical understanding, expressed in code that can still fit in one person's head.</p><p>The current phase is infrastructure and dataset preparation. No Jarvisn't checkpoint has been trained, and no capabilities or benchmarks are being claimed.</p></div>
+      <div className="rich-copy"><p>The project began with a simple question: what changes when you stop treating language models as black boxes and build the pipeline yourself?</p><p>Jarvisn't follows that question from raw text and tokenization through model architecture, pretraining, supervised fine-tuning, evaluation, and inference. The goal is technical understanding, expressed in code that can still fit in one person's head.</p><p>The model has now been trained, and its checkpoints are available. It is a small experimental model built to beat GPT-2, so its responses can still be unreliable and prone to hallucinations.</p></div>
     </section>
     <section className="creator-card section-rule">
-      <div className="creator-mark" aria-hidden="true">T</div>
+      <Link className="creator-mark" href="/contact" aria-label={`Contact ${siteConfig.creator}`}><Image src="/creator-portrait.png" alt={`${siteConfig.creator}`} width={600} height={600} /></Link>
       <div><p className="kicker">Creator</p><h2>{siteConfig.creator}</h2><p>{siteConfig.creatorBio}</p><Link className="arrow-link" href="/contact">Contact and project links <span>→</span></Link></div>
     </section>
     <section className="principle-grid section-rule">

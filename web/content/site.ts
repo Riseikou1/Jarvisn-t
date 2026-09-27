@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "Jarvisn't",
   creator: "Temuujin",
   description:
-    "Chat with Jarvisn't, an independent language model project in development.",
+    "Chat with Jarvisn't, an independent experimental language model trained from scratch.",
   tagline: "A small model, learning in public.",
   github: "https://github.com/Riseikou1",
   email: "temka4705@gmail.com",
@@ -14,7 +14,7 @@ export const siteConfig = {
     "I'm Temuujin, a university student focused on artificial intelligence and software engineering. I built Jarvisn't to learn what it actually takes to build and train a language model rather than treating modern AI as a black box.",
   status: [
     { label: "Tokenizer", state: "Tooling ready", tone: "ready" },
-    { label: "Pretraining", state: "Not started", tone: "pending" },
+    { label: "Pretraining", state: "Complete · checkpoints available", tone: "ready" },
     { label: "SFT", state: "Dataset prepared", tone: "progress" },
     { label: "Evaluation", state: "Pending", tone: "pending" },
   ],

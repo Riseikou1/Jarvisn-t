@@ -30,7 +30,7 @@ export function Nav(){
     <Link className="brand" href="/" aria-label={`${siteConfig.name} home`}><img className="brand-logo" src="/icon.png" alt=""/><span>{siteConfig.name}</span></Link>
     <nav className="desktop-nav" aria-label="Primary navigation">{navLinks}</nav>
     <div className="header-actions">
-      <span className="status-link"><span/>In development</span>
+      <span className="status-link"><span/>Experimental</span>
       <button className="theme-toggle" type="button" role="switch" aria-checked={theme === "dark"} onClick={toggleTheme} aria-label="Dark mode" title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
         <span className="theme-thumb" aria-hidden="true">
           <svg className="theme-icon sun" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
