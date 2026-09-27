@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+const MAX_CONTEXT_MESSAGES = 7; // three complete exchanges plus the current user message
+
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -23,11 +25,19 @@ export function ChatInterface() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages, temperature: 0.6, top_k: 50, max_tokens: 512 }),
+        body: JSON.stringify({
+          messages: nextMessages.slice(-MAX_CONTEXT_MESSAGES),
+          temperature: 0.6,
+          top_k: 50,
+          max_tokens: 256,
+        }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "The model did not respond.");
-      setMessages([...nextMessages, payload.message]);
+      if (payload.message?.role !== "assistant" || typeof payload.message.content !== "string") {
+        throw new Error("The model returned an invalid response.");
+      }
+      setMessages([...nextMessages, payload.message as Message]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The model did not respond.");
     } finally {
