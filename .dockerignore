@@ -1,0 +1,17 @@
+.git
+.venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.env
+.env.*
+*.pt
+*.pth
+*.safetensors
+*.bin
+tokenizer/
+*_checkpoints/
+**/*_checkpoints/
+sft_dataset/
+data/
+wandb/

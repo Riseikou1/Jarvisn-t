@@ -137,6 +137,103 @@ alternating user and assistant messages, beginning with a user message. Set
 `Authorization: Bearer <key>`; do not put the key in a client-side app or source
 file. The API is bound to localhost by default and is intended for local use.
 
+## RunPod Serverless worker
+
+The repository root contains a `Dockerfile` for RunPod's **Deploy from a
+GitHub repository** flow. The worker loads the custom SFT `d24` checkpoint at
+step `100` once per worker process, then reuses the same model, tokenizer, and
+`Engine` for requests. It does not run the interactive CLI.
+
+Keep model files outside Git and the Docker image. At worker startup,
+`huggingface_hub.snapshot_download` fetches the private
+`Riseikou1/jarvisnt-custom-sft` repository with the `HF_TOKEN` environment
+secret directly into `JARVISNT_BASE_DIR`. The Hub repository uses the layout
+expected by `load_model`:
+
+```text
+$JARVISNT_BASE_DIR/
+  tokenizer/
+  customsft_checkpoints/
+    d24/
+      model_000100.pt
+      meta_000100.json
+```
+
+The repository also contains `tokenizer/token_bytes.pt`; `load_model` uses
+`tokenizer/tokenizer.pkl`. Set `HF_TOKEN` as a RunPod secret with read access
+to the private model repo. Never put it in the repository, Docker build
+arguments, or request payload. The Docker image contains only code and
+dependencies. The default artifact directory is `/runpod-volume/jarvisnt`; you
+can mount a persistent volume there and set `JARVISNT_BASE_DIR` to preserve the
+download cache across worker restarts. `.dockerignore` excludes local model,
+tokenizer, dataset, and secret files. The checkpoint download is about 4.2 GiB,
+so allow enough free volume space and startup time.
+
+Set `JARVISNT_DEVICE_TYPE=cpu` to test on CPU, or `auto` (the default) to use
+CUDA when available and CPU otherwise. The same image and inference code can
+therefore be used when switching the endpoint to a GPU worker. You can tune
+the worker generation ceiling with `JARVISNT_MAX_NEW_TOKENS` (default 512).
+
+The RunPod job input uses ordered chat messages. Include the existing system
+prompt as the first message when your application supplies one; the final
+message must be the current user turn:
+
+```json
+{
+  "input": {
+    "messages": [
+      {"role": "user", "content": "Remember 42."},
+      {"role": "assistant", "content": "I will remember 42."},
+      {"role": "user", "content": "What number did I mention?"}
+    ],
+    "temperature": 0.6,
+    "top_k": 50,
+    "max_tokens": 256
+  }
+}
+```
+
+The response is `{"response":"..."}`. Any supplied system prompt is retained,
+only the newest three complete user/assistant history exchanges are sent to the model,
+and the current user message is always included. Assistant-end tokens are
+omitted from the response.
+
+Run the focused worker tests locally:
+
+```bash
+uv run --extra cpu --group dev python -m pytest tests/test_runpod_worker.py tests/test_chat_context.py tests/test_serve_chat.py -q
+```
+
+You can verify the Docker build locally (the model weights are downloaded only
+when a worker starts):
+
+```bash
+docker build -t jarvisnt-runpod-worker .
+```
+
+To test against the real private checkpoint without starting a RunPod worker,
+set `HF_TOKEN` in your local environment and run:
+
+```bash
+JARVISNT_BASE_DIR=/path/to/jarvisnt-cache JARVISNT_DEVICE_TYPE=cpu \
+uv run --extra cpu python - <<'PY'
+from runpod_worker.handler import handler, initialize_worker
+
+initialize_worker()
+job = {"input": {"messages": [{"role": "user", "content": "Say hello briefly."}]}}
+print(handler(job))
+PY
+```
+
+This downloads the model files into the configured local cache on first run.
+
+For RunPod's GitHub flow, create a Serverless endpoint from this repository
+with the repository root as the build context, so it detects the root
+`Dockerfile`. Add `HF_TOKEN` as a secret and set `JARVISNT_DEVICE_TYPE` to
+`auto` (or `cpu` for CPU testing). Set `JARVISNT_BASE_DIR` if the worker's
+model cache is mounted at a different path. Then let RunPod build and start
+the endpoint. This repository change does not create or start it.
+
 ## Web interface
 
 The site in `web/` documents the project and its current status. It deliberately does not expose a chat button while no trained model endpoint exists.
