@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-export const maxDuration = 420;
+export const maxDuration = 300;
 
-const DEFAULT_TIMEOUT_MS = 420_000;
+const DEFAULT_TIMEOUT_MS = 300_000;
 const DEFAULT_RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
 const MAX_BODY_BYTES = 64 * 1024;
