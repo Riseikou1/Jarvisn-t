@@ -1,7 +1,11 @@
 """Local HTTP inference API for Jarvisn't chat checkpoints.
 
-Run with ``python -m scripts.serve_chat --source custom --model-tag d24
---step 100 --device-type cpu``. Set ``JARVISNT_INFERENCE_API_KEY`` to require
+Run with ``python -m scripts.serve_chat \
+    --source sft \
+    --model-tag d24 \
+    --step 467 \
+    --device-type cpu``.
+Set ``JARVISNT_INFERENCE_API_KEY`` to require
 Bearer authentication; the key is read only from the server environment.
 """
 
@@ -19,7 +23,7 @@ from jarvisnt.engine import Engine
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Serve Jarvisn't chat inference over HTTP")
-    parser.add_argument("--source", choices=["sft", "custom", "rl"], default="custom")
+    parser.add_argument("--source", choices=["sft", "custom", "rl"], default="sft")
     parser.add_argument("--model-tag", default=None)
     parser.add_argument("--step", type=int, default=None)
     parser.add_argument("--device-type", choices=["cuda", "cpu", "mps"], default="")

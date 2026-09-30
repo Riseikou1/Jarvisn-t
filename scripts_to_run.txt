@@ -8,3 +8,9 @@ python -m scripts.chat_cli --source base --model-tag d24 --step 5568 --device-ty
 
 # custom dataset
 python -m scripts.chat_cli --source custom --model-tag d24 --step 100 --device-type cpu
+
+python -m scripts.serve_chat \
+    --source sft \
+    --model-tag d24 \
+    --step 467 \
+    --device-type cpu

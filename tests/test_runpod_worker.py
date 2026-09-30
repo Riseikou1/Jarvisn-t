@@ -119,9 +119,9 @@ def test_private_repo_download_uses_loader_layout_and_hf_token(tmp_path):
 
     def fake_download(**kwargs):
         seen.update(kwargs)
-        (tmp_path / "customsft_checkpoints/d24").mkdir(parents=True)
-        (tmp_path / "customsft_checkpoints/d24/model_000100.pt").touch()
-        (tmp_path / "customsft_checkpoints/d24/meta_000100.json").touch()
+        (tmp_path / "chatsft_checkpoints/d24").mkdir(parents=True)
+        (tmp_path / "chatsft_checkpoints/d24/model_000467.pt").touch()
+        (tmp_path / "chatsft_checkpoints/d24/meta_000467.json").touch()
         (tmp_path / "tokenizer").mkdir()
         (tmp_path / "tokenizer/tokenizer.pkl").touch()
 
@@ -131,7 +131,7 @@ def test_private_repo_download_uses_loader_layout_and_hf_token(tmp_path):
 
     assert result == tmp_path
     assert seen == {
-        "repo_id": "Riseikou1/jarvisnt-custom-sft",
+        "repo_id": "Riseikou1/jarvisnt-chat-sft",
         "token": "test-token",
         "local_dir": str(tmp_path),
     }

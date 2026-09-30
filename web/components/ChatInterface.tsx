@@ -66,10 +66,13 @@ export function ChatInterface() {
         </div>
       )}
       <div className="inference-composer-wrap">
+        <p className="inference-cold-start-notice">
+          I can’t keep the server running 24/7 because of the cost. If it’s asleep, your first reply may take several minutes while it starts.
+        </p>
         <details className="inference-disclosure">
           <summary><span aria-hidden="true">ⓘ</span> About this chat</summary>
           <div className="inference-disclosure-content">
-            <p>This project is designed to run on a tight budget. It uses a CPU rather than an always-on GPU cluster, so the service may take a while to start when it has been idle. If many people are chatting at once, you may also have to wait in a queue.</p>
+            <p>This project runs on a tight budget and uses CPU inference. If many people are chatting at once, you may have to wait in a queue.</p>
             <p>The model is an experimental, small model built to beat GPT-2. It can make things up confidently, so please check important information. Thanks for your patience while this project grows.</p>
           </div>
         </details>

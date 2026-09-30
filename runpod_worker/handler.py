@@ -11,10 +11,23 @@ from jarvisnt.engine import Engine
 from scripts.serve_chat import InferenceService
 
 
-MODEL_SOURCE = "custom"
-MODEL_TAG = "d24"
-MODEL_STEP = 100
-HF_REPO_ID = "Riseikou1/jarvisnt-custom-sft"
+MODEL_SOURCE = os.environ.get("JARVISNT_MODEL_SOURCE", "sft")
+MODEL_TAG = os.environ.get("JARVISNT_MODEL_TAG", "d24")
+MODEL_STEP = int(os.environ.get("JARVISNT_MODEL_STEP", "467"))
+HF_REPO_ID = os.environ.get(
+    "JARVISNT_HF_REPO_ID",
+    "Riseikou1/jarvisnt-chat-sft",
+)
+
+CHECKPOINT_DIRS = {
+    "base": "base_checkpoints",
+    "sft": "chatsft_checkpoints",
+    "custom": "customsft_checkpoints",
+    "rl": "chatrl_checkpoints",
+}
+
+CHECKPOINT_DIR = CHECKPOINT_DIRS[MODEL_SOURCE]
+
 SERVICE = None
 STARTUP_ERROR = None
 INFERENCE_LOCK = threading.Lock()
@@ -72,8 +85,8 @@ def download_model_artifacts(token=None, base_dir=None, download_fn=None):
     download_fn(repo_id=HF_REPO_ID, token=token, local_dir=str(base_dir))
 
     expected_files = [
-        base_dir / "customsft_checkpoints" / MODEL_TAG / f"model_{MODEL_STEP:06d}.pt",
-        base_dir / "customsft_checkpoints" / MODEL_TAG / f"meta_{MODEL_STEP:06d}.json",
+        base_dir / CHECKPOINT_DIR / MODEL_TAG / f"model_{MODEL_STEP:06d}.pt",
+        base_dir / CHECKPOINT_DIR / MODEL_TAG / f"meta_{MODEL_STEP:06d}.json",
         base_dir / "tokenizer" / "tokenizer.pkl",
     ]
     missing = [str(path.relative_to(base_dir)) for path in expected_files if not path.is_file()]
@@ -123,11 +136,11 @@ def initialize_worker():
             raise ValueError("JARVISNT_MAX_NEW_TOKENS must be positive")
         SERVICE = InferenceService(Engine(model, tokenizer), tokenizer, max_tokens)
         STARTUP_ERROR = None
-        print(f"Loaded custom checkpoint {MODEL_TAG} step {MODEL_STEP} on {device_type}")
+        print(f"Loaded sft checkpoint {MODEL_TAG} step {MODEL_STEP} on {device_type}")
     except FileNotFoundError:
         STARTUP_ERROR = (
             "missing_artifacts",
-            "Model artifacts are missing. Check JARVISNT_BASE_DIR and confirm the custom checkpoint and tokenizer are mounted.",
+            "Model artifacts are missing. Check JARVISNT_BASE_DIR and confirm the checkpoint and tokenizer are mounted.",
         )
     except Exception:
         # Keep details in server logs only; never echo environment values or

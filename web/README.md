@@ -33,7 +33,7 @@ Each inference request contains the previous three complete user/assistant
 exchanges and the current user message. The browser can keep showing older
 messages, but they are not sent to the model. The API route enforces the same
 limit. Generation defaults to 256 new tokens (maximum 512); the route also
-limits requests to 10 per IP per minute by default and times out after 3
+limits requests to 10 per IP per minute by default and times out after 7
 minutes. Configure `JARVISNT_RATE_LIMIT` and
 `JARVISNT_INFERENCE_TIMEOUT_MS` in Vercel if needed. The built-in rate
 limiter is per serverless instance; for larger public traffic, use a shared

@@ -59,6 +59,7 @@ html[data-theme="light"] .mobile-menu nav a.active { color: var(--cyan); }
 .inference-message.assistant p { margin: 2px 0 0; color: var(--ink); line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
 .assistant-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--panel-strong); color: var(--cyan); font: 600 13px var(--sans); }
 .inference-composer-wrap { width: 100%; }
+.inference-cold-start-notice { max-width: 760px; margin: 0 auto 12px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel); color: var(--ink); font-size: 13px; line-height: 1.5; text-align: center; }
 .inference-disclosure { position: relative; margin: 0 0 12px; color: var(--muted); font-size: 13px; }
 .inference-disclosure summary { width: max-content; display: flex; align-items: center; gap: 8px; margin: 0 auto; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); background: var(--panel); font-weight: 600; cursor: pointer; list-style: none; box-shadow: 0 2px 8px rgba(0,0,0,.14); transition: color .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
 .inference-disclosure summary::-webkit-details-marker { display: none; }
