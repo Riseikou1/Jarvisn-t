@@ -155,19 +155,6 @@ export async function POST(request: NextRequest) {
       output?: { response?: unknown; error?: { message?: unknown } };
     } | null;
 
-    console.error("RunPod response diagnostic", {
-      endpoint: new URL(inferenceUrl).host + new URL(inferenceUrl).pathname,
-      httpStatus: upstream.status,
-      runpodStatus: result?.status,
-      topLevelKeys:
-        result && typeof result === "object" ? Object.keys(result) : [],
-      outputKeys:
-        result?.output && typeof result.output === "object"
-          ? Object.keys(result.output)
-          : [],
-      responseType: typeof result?.output?.response,
-    });
-
     if (!upstream.ok) {
       return NextResponse.json({ error: "RunPod could not process this message." }, { status: 502 });
     }

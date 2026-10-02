@@ -189,17 +189,7 @@ def handler(job):
                 top_k=top_k,
                 max_tokens=max_tokens,
             )
-        response = response.replace("<|assistant_end|>", "").strip()
-        response_bytes = response.encode("utf-8", errors="replace")
-        print(
-            f"[debug] generated_chars={len(response)} "
-            f"generated_bytes={len(response_bytes)}"
-        )
-        return {
-            "response": "ok",
-            "debug_chars": len(response),
-            "debug_bytes": len(response_bytes),
-        }
+        return {"response": response.replace("<|assistant_end|>", "").strip()}
     except ValueError as exc:
         return _error("invalid_input", str(exc))
     except Exception:
