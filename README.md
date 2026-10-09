@@ -2,7 +2,7 @@
 
 Jarvisn't is Temuujin's small language-model project: a readable, end-to-end stack for learning how tokenization, pretraining, supervised fine-tuning, evaluation, and inference fit together.
 
-> **Status:** in development. The training infrastructure and a bootstrap SFT dataset are present, but Jarvisn't has not been pretrained or fine-tuned yet. There are no published checkpoints or benchmark results.
+> **Status:** pretraining and supervised fine-tuning are complete. Jarvisn't has trained checkpoints, local inference support, and a web chat interface backed by a RunPod Serverless worker. The worker defaults to the SFT `d24` checkpoint at step `467`.
 
 ## What is Jarvisn't?
 
@@ -14,11 +14,13 @@ The project is maintained by **Temuujin**.
 
 | Area | Status |
 | --- | --- |
-| Tokenizer | Training and evaluation tooling is implemented; no trained artifact is committed |
-| Pretraining | Pipeline is implemented; training has not started |
-| SFT | A 1,320-example bootstrap corpus is prepared; training has not run |
-| Evaluation | Tooling is present; results are pending a trained checkpoint |
-| Inference | CLI/runtime code is present; no live model endpoint exists |
+| Tokenizer | Trained tokenizer is loaded alongside the model checkpoints |
+| Pretraining | Complete; the base inference command uses `d24` at step `5568` |
+| SFT | Complete; the chat worker defaults to `d24` at step `467` |
+| Evaluation | Bits-per-byte, CORE, and chat evaluation tooling is available; benchmark scores are not documented here |
+| Inference | CLI, local HTTP API, RunPod Serverless worker, and web chat interface are implemented |
+
+Model weights and tokenizer artifacts are stored outside Git. See the local inference and RunPod sections below for checkpoint setup.
 
 ## Architecture and training stack
 
@@ -32,7 +34,7 @@ The main configuration is selected per training run. Current defaults include:
 - ClimbMix parquet shards as the configured pretraining source;
 - Muon/AdamW optimization and distributed training support.
 
-These are code defaults, not claims about a trained Jarvisn't checkpoint.
+These are code defaults. Use a checkpoint's metadata for its exact training configuration.
 
 ## Setup
 
@@ -87,17 +89,17 @@ Tokenizer artifacts are written below `$JARVISNT_BASE_DIR/tokenizer` (or the def
 
 ## Training
 
-The scripts below launch real model training and can be expensive. Review their options and hardware requirements before running them.
+Pretraining and supervised fine-tuning have been completed. The scripts below are available to reproduce or extend training; inference uses the existing checkpoints.
 
 ```bash
 # Pretraining
 python -m scripts.base_train --help
 
-# Supervised fine-tuning, after a compatible base checkpoint exists
+# Supervised fine-tuning from a compatible base checkpoint
 python -m scripts.chat_sft --help
 ```
 
-Reference recipes live in `runs/`. They are documentation and launch scripts, not evidence that Jarvisn't has already been trained. The architecture, optimizer, schedules, and dataset mixture remain intentionally close to the upstream technical foundation.
+Training recipes live in `runs/`: `speedrun.sh` covers pretraining and chat fine-tuning, and `custom_sft.sh` supports further fine-tuning on the local instruction dataset. The architecture, optimizer, schedules, and dataset mixture remain intentionally close to the upstream technical foundation.
 
 ## Evaluation
 
@@ -108,7 +110,7 @@ python -m scripts.base_eval --help
 python -m scripts.chat_eval --help
 ```
 
-The repository includes bits-per-byte evaluation, CORE tasks, chat evaluation, and inference benchmarking. No Jarvisn't scores are published yet.
+The repository includes bits-per-byte evaluation, CORE tasks, chat evaluation, and inference benchmarking. Benchmark scores are not documented in this README.
 
 ## Local inference API
 
@@ -119,7 +121,7 @@ repository root with a local checkpoint and tokenizer installed under
 
 ```bash
 uv run --extra cpu python -m scripts.serve_chat \
-  --source custom --model-tag d24 --step 100 --device-type cpu
+  --source sft --model-tag d24 --step 467 --device-type cpu
 ```
 
 It listens on `http://127.0.0.1:8000`. Send a new message with optional
@@ -140,34 +142,38 @@ file. The API is bound to localhost by default and is intended for local use.
 ## RunPod Serverless worker
 
 The repository root contains a `Dockerfile` for RunPod's **Deploy from a
-GitHub repository** flow. The worker loads the custom SFT `d24` checkpoint at
-step `100` once per worker process, then reuses the same model, tokenizer, and
+GitHub repository** flow. The worker loads the SFT `d24` checkpoint at
+step `467` once per worker process, then reuses the same model, tokenizer, and
 `Engine` for requests. It does not run the interactive CLI.
 
 Keep model files outside Git and the Docker image. At worker startup,
 `huggingface_hub.snapshot_download` fetches the private
-`Riseikou1/jarvisnt-custom-sft` repository with the `HF_TOKEN` environment
+`Riseikou1/jarvisnt-chat-sft` repository with the `HF_TOKEN` environment
 secret directly into `JARVISNT_BASE_DIR`. The Hub repository uses the layout
 expected by `load_model`:
 
 ```text
 $JARVISNT_BASE_DIR/
   tokenizer/
-  customsft_checkpoints/
+  chatsft_checkpoints/
     d24/
-      model_000100.pt
-      meta_000100.json
+      model_000467.pt
+      meta_000467.json
 ```
 
-The repository also contains `tokenizer/token_bytes.pt`; `load_model` uses
+To select another checkpoint, set `JARVISNT_HF_REPO_ID`,
+`JARVISNT_MODEL_SOURCE`, `JARVISNT_MODEL_TAG`, and `JARVISNT_MODEL_STEP`
+to match its repository and checkpoint layout.
+
+The model repository also contains `tokenizer/token_bytes.pt`; `load_model` uses
 `tokenizer/tokenizer.pkl`. Set `HF_TOKEN` as a RunPod secret with read access
 to the private model repo. Never put it in the repository, Docker build
 arguments, or request payload. The Docker image contains only code and
 dependencies. The default artifact directory is `/runpod-volume/jarvisnt`; you
 can mount a persistent volume there and set `JARVISNT_BASE_DIR` to preserve the
 download cache across worker restarts. `.dockerignore` excludes local model,
-tokenizer, dataset, and secret files. The checkpoint download is about 4.2 GiB,
-so allow enough free volume space and startup time.
+tokenizer, dataset, and secret files. Allow enough free volume space and
+startup time for the selected model repository to download.
 
 Set `JARVISNT_DEVICE_TYPE=cpu` to test on CPU, or `auto` (the default) to use
 CUDA when available and CPU otherwise. The same image and inference code can
@@ -236,7 +242,7 @@ the endpoint. This repository change does not create or start it.
 
 ## Web interface
 
-The site in `web/` documents the project and its current status. It deliberately does not expose a chat button while no trained model endpoint exists.
+The site in `web/` includes the project pages and a chat interface. Its Next.js `/api/chat` route sends requests to RunPod Serverless and keeps the API key on the server. Configure `JARVISNT_INFERENCE_URL` and `JARVISNT_INFERENCE_API_KEY` as described in [web/README.md](web/README.md) to connect chat to your endpoint.
 
 ```bash
 cd web
